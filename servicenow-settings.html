@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ServiceNow settings - Cloudeon</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            snow: {
+              DEFAULT: '#2ea87e',
+              light: '#3dbb8e',
+              dark: '#218461',
+              50: '#f2faf7',
+              100: '#e1f3ec',
+              900: '#114130'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Outfit', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col relative overflow-x-hidden">
+  <!-- Glow blob -->
+  <div class="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <!-- Header -->
+  <header class="w-full border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center font-bold text-emerald-400">
+          SN
+        </div>
+        <div>
+          <span class="font-bold text-white tracking-tight">ServiceNow Settings</span>
+          <span id="user-email" class="block text-xs text-slate-400">Loading user...</span>
+        </div>
+      </div>
+      <nav class="flex flex-wrap items-center gap-6 text-sm font-medium">
+        <a href="/servicenow/dashboard" class="text-slate-400 hover:text-white transition-colors pb-1">Dashboard</a>
+        <a href="/servicenow/settings" class="text-emerald-400 border-b-2 border-emerald-400 pb-1">Settings</a>
+        <a href="/" class="text-slate-400 hover:text-white transition-colors pb-1">Gateway</a>
+        <button onclick="handleLogout()" class="text-slate-400 hover:text-rose-400 transition-colors pb-1">Sign Out</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Area -->
+  <main class="flex-grow max-w-4xl w-full mx-auto px-6 py-8 space-y-8">
+    
+    <!-- ServiceNow Connection card -->
+    <div class="bg-slate-900/60 border border-slate-800/80 backdrop-blur-md rounded-2xl p-6 shadow-xl space-y-6">
+      <div>
+        <h2 class="text-xl font-bold text-white">ServiceNow Connection Config</h2>
+        <p class="text-sm text-slate-400 mt-1">Specify target instance URL, username and basic authentication secret.</p>
+      </div>
+
+      <div id="conn-alert" class="hidden p-4 rounded-xl text-sm border flex items-center"></div>
+
+      <form onsubmit="saveConnection(event)" class="space-y-4">
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label for="instance_url" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Instance URL</label>
+            <input type="text" id="instance_url" required placeholder="https://dev12345.service-now.com"
+              class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-colors">
+          </div>
+          <div class="space-y-2">
+            <label for="username" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Username</label>
+            <input type="text" id="username" required placeholder="admin"
+              class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-colors">
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label for="password" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Password</label>
+          <div class="relative">
+            <input type="password" id="password" required placeholder="••••••••"
+              class="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-4 pr-12 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-colors">
+            <button type="button" onclick="togglePasswordVisibility('password')" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-800/80">
+          <button type="button" onclick="testConnection()" id="btn-test-conn" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 font-semibold px-6 py-2.5 rounded-xl transition-all">
+            Test Connection
+          </button>
+          <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-all">
+            Save Connection Settings
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Storage settings card -->
+    <div class="bg-slate-900/60 border border-slate-800/80 backdrop-blur-md rounded-2xl p-6 shadow-xl space-y-6">
+      <div>
+        <h2 class="text-xl font-bold text-white">Storage Destination Settings</h2>
+        <p class="text-sm text-slate-400 mt-1">Configure where attachments should be saved during retrieval runs.</p>
+      </div>
+
+      <div id="storage-alert" class="hidden p-4 rounded-xl text-sm border flex items-center"></div>
+
+      <!-- Mode selector toggles -->
+      <div class="flex gap-4">
+        <label class="flex-1 cursor-pointer">
+          <input type="radio" name="storage_mode" value="local" checked onchange="toggleStorageMode('local')" class="sr-only peer">
+          <div class="p-4 rounded-xl border border-slate-800 bg-slate-950/20 text-center font-semibold text-slate-400 peer-checked:border-emerald-500/50 peer-checked:bg-emerald-500/5 peer-checked:text-emerald-400 transition-all">
+            Local Archive Folder
+          </div>
+        </label>
+        <label class="flex-1 cursor-pointer">
+          <input type="radio" name="storage_mode" value="s3" onchange="toggleStorageMode('s3')" class="sr-only peer">
+          <div class="p-4 rounded-xl border border-slate-800 bg-slate-950/20 text-center font-semibold text-slate-400 peer-checked:border-emerald-500/5 peer-checked:bg-emerald-500/5 peer-checked:text-emerald-400 transition-all">
+            Amazon S3 Bucket
+          </div>
+        </label>
+      </div>
+
+      <form onsubmit="saveStorage(event)" class="space-y-6">
+        
+        <!-- Local storage panel -->
+        <div id="local-panel" class="space-y-4">
+          <div class="space-y-2">
+            <label for="local_path" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Archive Folder Path</label>
+            <div class="flex gap-2">
+              <input type="text" id="local_path" placeholder="/absolute/path/to/archive"
+                class="flex-grow bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-colors">
+              <button type="button" onclick="openFolderBrowser()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-4 rounded-xl transition-all">
+                Browse
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- S3 storage panel -->
+        <div id="s3-panel" class="hidden space-y-4">
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label for="aws_access_key_id" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Access Key ID</label>
+              <input type="text" id="aws_access_key_id" placeholder="AKIA..."
+                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-colors">
+            </div>
+            <div class="space-y-2">
+              <label for="aws_secret_access_key" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Secret Access Key</label>
+              <div class="relative">
+                <input type="password" id="aws_secret_access_key" placeholder="••••••••"
+                  class="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-4 pr-12 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-colors">
+                <button type="button" onclick="togglePasswordVisibility('aws_secret_access_key')" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-4">
+            <div class="space-y-2">
+              <label for="region_name" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">AWS Region</label>
+              <input type="text" id="region_name" placeholder="us-east-1"
+                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-colors">
+            </div>
+            <div class="space-y-2">
+              <label for="bucket" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">S3 Bucket Name</label>
+              <input type="text" id="bucket" placeholder="my-archiver-bucket"
+                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-colors">
+            </div>
+            <div class="space-y-2">
+              <label for="prefix" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Prefix (Optional)</label>
+              <input type="text" id="prefix" placeholder="archive-folder"
+                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-colors">
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-800/80">
+          <button type="button" onclick="testStorage()" id="btn-test-storage" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 font-semibold px-6 py-2.5 rounded-xl transition-all">
+            Test Destination
+          </button>
+          <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-all">
+            Save Storage Destination
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </main>
+
+  <!-- Folder Browser Modal -->
+  <div id="folder-browser-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
+        <h3 class="font-bold text-white flex items-center">
+          <svg class="w-5 h-5 mr-2 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+          Folder Browser
+        </h3>
+        <button onclick="closeFolderBrowser()" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+
+      <!-- Current path navigation -->
+      <div class="px-6 py-3 border-b border-slate-800 bg-slate-950/20 flex items-center gap-3">
+        <button id="folder-up" onclick="browseFolderUp()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-3 py-1 rounded-lg text-xs transition-colors">
+          &uarr; Up
+        </button>
+        <span id="current-folder-path" class="text-xs text-slate-400 font-mono select-all overflow-x-auto whitespace-nowrap">/home/user</span>
+      </div>
+
+      <!-- Directories List -->
+      <div id="folders-list" class="flex-grow p-6 overflow-y-auto space-y-2">
+        <!-- populated dynamically -->
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t border-slate-800 bg-slate-950/50 flex justify-between items-center">
+        <span class="text-xs text-slate-500">Double click folder to open it</span>
+        <div class="flex gap-2">
+          <button onclick="closeFolderBrowser()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-4 py-2 rounded-xl text-xs transition-colors">
+            Cancel
+          </button>
+          <button onclick="confirmFolderSelection()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-4 py-2 rounded-xl text-xs transition-colors">
+            Select This Folder
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="w-full py-6 border-t border-slate-900 text-center text-xs text-slate-500 mt-12">
+    &copy; 2026 Cloudeon. Protected by cryptography encryption modules.
+  </footer>
+
+  <script>
+    let hasFetchedPassword = false;
+    let hasFetchedS3Secret = false;
+    let currentBrowserPath = "";
+    let currentBrowserParent = null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      // 1. Session Auth
+      try {
+        const userRes = await fetch("/api/account/me?portal=servicenow");
+        if (userRes.ok) {
+          const user = await userRes.json();
+          document.getElementById("user-email").innerText = user.email;
+        } else {
+          window.location.href = "/servicenow";
+          return;
+        }
+      } catch (err) {
+        window.location.href = "/servicenow";
+        return;
+      }
+
+      // 2. Fetch platform credentials
+      await loadPlatformCredentials();
+      
+      // 3. Fetch storage destination
+      await loadStorageSettings();
+    });
+
+    async function loadPlatformCredentials() {
+      try {
+        const response = await fetch("/api/credentials?platform=servicenow");
+        if (response.ok) {
+          const data = await response.json();
+          const creds = data.credentials || {};
+          document.getElementById("instance_url").value = creds.instance_url || "";
+          document.getElementById("username").value = creds.username || "";
+          if (creds.password) {
+            document.getElementById("password").value = creds.password;
+          }
+        }
+      } catch (e) {
+        showConnectionAlert("Failed to load ServiceNow credentials.", "error");
+      }
+    }
+
+    async function loadStorageSettings() {
+      try {
+        const response = await fetch("/api/storage?portal=servicenow");
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Set mode radio
+          const mode = data.mode || "local";
+          document.querySelector(`input[name="storage_mode"][value="${mode}"]`).checked = true;
+          toggleStorageMode(mode);
+
+          // Populate fields
+          document.getElementById("local_path").value = data.local?.local_path || "";
+          document.getElementById("aws_access_key_id").value = data.s3?.aws_access_key_id || "";
+          if (data.s3?.aws_secret_access_key) {
+            document.getElementById("aws_secret_access_key").value = data.s3.aws_secret_access_key;
+          }
+          document.getElementById("region_name").value = data.s3?.region_name || "";
+          document.getElementById("bucket").value = data.s3?.bucket || "";
+          document.getElementById("prefix").value = data.s3?.prefix || "";
+        }
+      } catch (e) {
+        showStorageAlert("Failed to load storage destination settings.", "error");
+      }
+    }
+
+    function showConnectionAlert(msg, type = "error") {
+      const box = document.getElementById("conn-alert");
+      box.className = `p-4 rounded-xl text-sm border flex items-center mb-6`;
+      if (type === "success") {
+        box.classList.add("bg-emerald-500/10", "border-emerald-500/30", "text-emerald-400");
+      } else {
+        box.classList.add("bg-red-500/10", "border-red-500/30", "text-red-400");
+      }
+      box.innerText = msg;
+      box.classList.remove("hidden");
+    }
+
+    function showStorageAlert(msg, type = "error") {
+      const box = document.getElementById("storage-alert");
+      box.className = `p-4 rounded-xl text-sm border flex items-center mb-6`;
+      if (type === "success") {
+        box.classList.add("bg-emerald-500/10", "border-emerald-500/30", "text-emerald-400");
+      } else {
+        box.classList.add("bg-red-500/10", "border-red-500/30", "text-red-400");
+      }
+      box.innerText = msg;
+      box.classList.remove("hidden");
+    }
+
+    async function togglePasswordVisibility(fieldId) {
+      const input = document.getElementById(fieldId);
+      if (input.type === "password") {
+        input.type = "text";
+        
+        // Fetch real decrypted password on first reveal
+        if (fieldId === "password" && !hasFetchedPassword && input.value === "********") {
+          try {
+            const res = await fetch("/api/credentials/reveal?platform=servicenow");
+            if (res.ok) {
+              const data = await res.json();
+              input.value = data.secrets?.password || "";
+              hasFetchedPassword = true;
+            }
+          } catch (e) {}
+        }
+        
+        if (fieldId === "aws_secret_access_key" && !hasFetchedS3Secret && input.value === "********") {
+          try {
+            // S3 settings are retrieved inside storage settings, but secrets are decrypted on demand
+            // Wait, does /api/storage/reveal exist? The prompt states S3 config aws_secret_access_key is Fernet encrypted.
+            // Wait, does reveal retrieve storage secrets too? The prompt states GET /api/credentials/reveal?platform= returns decrypted secret.
+            // Let's implement storage secret decryption via GET /api/storage?portal= but actually it returns masked.
+            // Wait! The reveal endpoint for storage secrets?
+            // Let's check: "GET /api/credentials/reveal returns decrypted secret".
+            // Wait, is the S3 secret revealed through credentials/reveal too?
+            // Actually, we can check how to handle S3 secret.
+            // Since credentials/reveal is platform-based, it returns the platform secrets.
+            // Let's check how we handle S3 secret decryption.
+            // Wait! Can we get decrypted S3 secret using GET /api/credentials/reveal?platform=servicenow?
+            // Oh! In our run_dashboard.py `/api/credentials/reveal` returns secrets from PLATFORM_SECRET_FIELDS.
+            // Wait! Is S3 secret field also decrypted or can we add it to the credentials/reveal, or do we decrypt it directly?
+            // Actually, we can return storage decrypted secrets in the /api/credentials/reveal or we can expose a dedicated storage reveal.
+            // But wait, in run_dashboard.py:
+            // `/api/credentials/reveal` returns all secrets from platform and storage?
+            // Let's look at what we wrote in run_dashboard.py:
+            // It parses `platform` and gets decrypted platform secret fields. It doesn't reveal storage fields.
+            // Let's look at: " GET /api/credentials/reveal?platform=dev returns decrypted secret (powers show-password eye icon)"
+            // Wait! If the user wants to reveal `aws_secret_access_key`, we can expose S3 secret in credentials/reveal or have a general decrypt helper.
+            // Let's check: If they query `/api/credentials/reveal?platform=servicenow`, we can ALSO append the decrypted `aws_secret_access_key` from the user's storage config!
+            // Yes! That's super smart and keeps the endpoint mapping simple without adding new routes.
+            // Let's modify `/api/credentials/reveal` in run_dashboard.py to also include `aws_secret_access_key` if it exists.
+            // Wait, let's see. In run_dashboard.py, let's check if we can reveal S3 secret.
+            // Yes, let's make a request to `/api/credentials/reveal?platform=servicenow`. Let's assume it returns `{ secrets: { password: "...", aws_secret_access_key: "..." } }`.
+            // Let's check if that works.
+            const res = await fetch("/api/credentials/reveal?platform=servicenow");
+            if (res.ok) {
+              const data = await res.json();
+              if (fieldId === "aws_secret_access_key") {
+                input.value = data.secrets?.aws_secret_access_key || "";
+                hasFetchedS3Secret = true;
+              } else if (fieldId === "password") {
+                input.value = data.secrets?.password || "";
+                hasFetchedPassword = true;
+              }
+            }
+          } catch (e) {}
+        }
+      } else {
+        input.type = "password";
+      }
+    }
+
+    function toggleStorageMode(mode) {
+      const localPanel = document.getElementById("local-panel");
+      const s3Panel = document.getElementById("s3-panel");
+      if (mode === "local") {
+        localPanel.classList.remove("hidden");
+        s3Panel.classList.add("hidden");
+      } else {
+        localPanel.classList.add("hidden");
+        s3Panel.classList.remove("hidden");
+      }
+    }
+
+    async function testConnection() {
+      const btn = document.getElementById("btn-test-conn");
+      btn.disabled = true;
+      btn.innerText = "Testing...";
+      showConnectionAlert("Testing connection to ServiceNow instance...", "success");
+
+      const instance_url = document.getElementById("instance_url").value;
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        const res = await fetch("/api/credentials/test", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            platform: "servicenow",
+            instance_url,
+            username,
+            password
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showConnectionAlert("Connection successful! " + data.message, "success");
+        } else {
+          showConnectionAlert("Connection failed: " + data.message, "error");
+        }
+      } catch (e) {
+        showConnectionAlert("Error communicating with backend test tool.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Test Connection";
+      }
+    }
+
+    async function saveConnection(e) {
+      e.preventDefault();
+      const instance_url = document.getElementById("instance_url").value;
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        const res = await fetch("/api/credentials", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            platform: "servicenow",
+            instance_url,
+            username,
+            password
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showConnectionAlert("Connection credentials saved successfully.", "success");
+          // Re-load to get masked values
+          await loadPlatformCredentials();
+          hasFetchedPassword = false;
+        } else {
+          showConnectionAlert(data.error || "Failed to save credentials.", "error");
+        }
+      } catch (e) {
+        showConnectionAlert("Failed to save credentials: network error.", "error");
+      }
+    }
+
+    async function testStorage() {
+      const btn = document.getElementById("btn-test-storage");
+      btn.disabled = true;
+      btn.innerText = "Testing...";
+      showStorageAlert("Testing storage destination...", "success");
+
+      const mode = document.querySelector('input[name="storage_mode"]:checked').value;
+      
+      const payload = {
+        portal: "servicenow",
+        mode: mode,
+        local: {
+          local_path: document.getElementById("local_path").value
+        },
+        s3: {
+          aws_access_key_id: document.getElementById("aws_access_key_id").value,
+          aws_secret_access_key: document.getElementById("aws_secret_access_key").value,
+          region_name: document.getElementById("region_name").value,
+          bucket: document.getElementById("bucket").value,
+          prefix: document.getElementById("prefix").value
+        }
+      };
+
+      try {
+        const res = await fetch("/api/storage/test", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showStorageAlert("Storage access verified! " + data.message, "success");
+        } else {
+          showStorageAlert("Storage verification failed: " + data.message, "error");
+        }
+      } catch (e) {
+        showStorageAlert("Failed to test storage.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Test Destination";
+      }
+    }
+
+    async function saveStorage(e) {
+      e.preventDefault();
+      const mode = document.querySelector('input[name="storage_mode"]:checked').value;
+      
+      const payload = {
+        portal: "servicenow",
+        mode: mode,
+        local: {
+          local_path: document.getElementById("local_path").value
+        },
+        s3: {
+          aws_access_key_id: document.getElementById("aws_access_key_id").value,
+          aws_secret_access_key: document.getElementById("aws_secret_access_key").value,
+          region_name: document.getElementById("region_name").value,
+          bucket: document.getElementById("bucket").value,
+          prefix: document.getElementById("prefix").value
+        }
+      };
+
+      try {
+        const res = await fetch("/api/storage", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showStorageAlert("Storage configuration saved successfully.", "success");
+          await loadStorageSettings();
+          hasFetchedS3Secret = false;
+        } else {
+          showStorageAlert(data.error || "Failed to save storage settings.", "error");
+        }
+      } catch (e) {
+        showStorageAlert("Failed to save settings: network error.", "error");
+      }
+    }
+
+    // Modal Folder Browser logic
+    async function openFolderBrowser() {
+      const pathInput = document.getElementById("local_path").value;
+      document.getElementById("folder-browser-modal").classList.remove("hidden");
+      await browseToFolder(pathInput || "");
+    }
+
+    function closeFolderBrowser() {
+      document.getElementById("folder-browser-modal").classList.add("hidden");
+    }
+
+    async function browseToFolder(path) {
+      const listContainer = document.getElementById("folders-list");
+      listContainer.innerHTML = `<div class="text-slate-500 text-sm">Loading directories...</div>`;
+      
+      try {
+        const response = await fetch(`/api/storage/browse?portal=servicenow&path=${encodeURIComponent(path)}`);
+        if (response.ok) {
+          const data = await response.json();
+          currentBrowserPath = data.path;
+          currentBrowserParent = data.parent;
+          
+          document.getElementById("current-folder-path").innerText = data.path;
+          
+          const upBtn = document.getElementById("folder-up");
+          if (data.parent) {
+            upBtn.disabled = false;
+            upBtn.classList.remove("opacity-50", "cursor-not-allowed");
+          } else {
+            upBtn.disabled = true;
+            upBtn.classList.add("opacity-50", "cursor-not-allowed");
+          }
+
+          if (data.directories && data.directories.length > 0) {
+            listContainer.innerHTML = data.directories.map(dir => `
+              <div ondblclick="browseToFolder('${currentBrowserPath.replace(/\\/g, '/')}/${dir}')" onclick="selectFolderRow(this, '${currentBrowserPath.replace(/\\/g, '/')}/${dir}')"
+                class="flex items-center p-3 rounded-xl hover:bg-slate-800/60 border border-transparent hover:border-slate-700/60 cursor-pointer select-none transition-all">
+                <svg class="w-5 h-5 mr-3 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                <span class="text-sm font-medium text-slate-200">${dir}</span>
+              </div>
+            `).join('');
+          } else {
+            listContainer.innerHTML = `<div class="text-slate-500 text-sm p-4 text-center">No subdirectories found.</div>`;
+          }
+        } else {
+          listContainer.innerHTML = `<div class="text-red-400 text-sm p-4 text-center">Failed to read path details.</div>`;
+        }
+      } catch (err) {
+        listContainer.innerHTML = `<div class="text-red-400 text-sm p-4 text-center">Error communicating with folder browser api.</div>`;
+      }
+    }
+
+    function selectFolderRow(elem, path) {
+      // Clear other selections
+      const siblings = elem.parentNode.children;
+      for (let sib of siblings) {
+        sib.classList.remove("bg-slate-800", "border-emerald-500/30");
+      }
+      elem.classList.add("bg-slate-800", "border-emerald-500/30");
+      currentBrowserPath = path;
+      document.getElementById("current-folder-path").innerText = path;
+    }
+
+    async function browseFolderUp() {
+      if (currentBrowserParent) {
+        await browseToFolder(currentBrowserParent);
+      }
+    }
+
+    function confirmFolderSelection() {
+      document.getElementById("local_path").value = currentBrowserPath;
+      closeFolderBrowser();
+    }
+
+    async function handleLogout() {
+      try {
+        await fetch("/api/account/logout", { method: "POST" });
+      } catch (e) {}
+      window.location.href = "/servicenow";
+    }
+  </script>
+</body>
+</html>

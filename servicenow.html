@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ServiceNow Attachment Portal - Access</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            snow: {
+              DEFAULT: '#2ea87e',
+              light: '#3dbb8e',
+              dark: '#218461',
+              50: '#f2faf7',
+              100: '#e1f3ec',
+              900: '#114130'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Outfit', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between relative overflow-hidden">
+  <!-- Glow blob -->
+  <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <!-- Header -->
+  <header class="w-full max-w-7xl mx-auto px-6 py-6 flex justify-between items-center z-10">
+    <a href="/" class="flex items-center space-x-3 group">
+      <div class="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center font-bold text-emerald-400 group-hover:scale-105 transition-transform">
+        &larr;
+      </div>
+      <span class="text-sm font-semibold tracking-tight text-slate-300 group-hover:text-white transition-colors">Back to Gateway</span>
+    </a>
+    <div class="flex items-center space-x-2">
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span class="text-xs text-slate-400 font-semibold tracking-wider uppercase">ServiceNow Portal</span>
+    </div>
+  </header>
+
+  <!-- Form container -->
+  <main class="flex-grow flex items-center justify-center px-6 py-12 z-10">
+    <div class="w-full max-w-md">
+      <div class="bg-slate-900/60 border border-slate-800/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl relative">
+        
+        <!-- Tab Indicators -->
+        <div class="flex border-b border-slate-800 mb-8">
+          <button id="tab-login" onclick="showPanel('login')" class="flex-1 pb-4 text-center font-semibold text-lg text-emerald-400 border-b-2 border-emerald-400 transition-all duration-200">
+            Sign In
+          </button>
+          <button id="tab-register" onclick="showPanel('register')" class="flex-1 pb-4 text-center font-semibold text-lg text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition-all duration-200">
+            Register
+          </button>
+        </div>
+
+        <!-- Alert messages box -->
+        <div id="alert-box" class="hidden mb-6 p-4 rounded-xl text-sm border flex items-center space-x-3">
+          <span id="alert-message" class="flex-1"></span>
+        </div>
+
+        <!-- Login panel -->
+        <form id="login-panel" onsubmit="handleLogin(event)" class="space-y-6">
+          <div class="space-y-2">
+            <label for="login-email" class="block text-sm font-medium text-slate-300">Account Email</label>
+            <input type="email" id="login-email" required placeholder="user@company.com" 
+              class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 transition-colors">
+          </div>
+          <div class="space-y-2">
+            <label for="login-password" class="block text-sm font-medium text-slate-300">Password</label>
+            <input type="password" id="login-password" required placeholder="••••••••" 
+              class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 transition-colors">
+          </div>
+          <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-emerald-500/10 transition-colors duration-200">
+            Sign In
+          </button>
+        </form>
+
+        <!-- Register panel -->
+        <form id="register-panel" onsubmit="handleRegister(event)" class="hidden space-y-6">
+          <div class="space-y-2">
+            <label for="register-email" class="block text-sm font-medium text-slate-300">Account Email</label>
+            <input type="email" id="register-email" required placeholder="user@company.com" 
+              class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 transition-colors">
+          </div>
+          <div class="space-y-2">
+            <label for="register-password" class="block text-sm font-medium text-slate-300">Password (min 8 chars)</label>
+            <input type="password" id="register-password" required placeholder="••••••••" 
+              class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 transition-colors">
+          </div>
+          <div class="space-y-2">
+            <label for="register-confirm" class="block text-sm font-medium text-slate-300">Confirm Password</label>
+            <input type="password" id="register-confirm" required placeholder="••••••••" 
+              class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 transition-colors">
+          </div>
+          <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-emerald-500/10 transition-colors duration-200">
+            Create Account
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full py-6 border-t border-slate-900 text-center text-xs text-slate-500 z-10">
+    &copy; 2026 Cloudeon. Protected by cryptography encryption modules.
+  </footer>
+
+  <script>
+    const alertBox = document.getElementById("alert-box");
+    const alertMessage = document.getElementById("alert-message");
+    const loginPanel = document.getElementById("login-panel");
+    const registerPanel = document.getElementById("register-panel");
+    const tabLogin = document.getElementById("tab-login");
+    const tabRegister = document.getElementById("tab-register");
+
+    function showAlert(msg, type = "error") {
+      alertBox.classList.remove("hidden", "bg-red-500/10", "border-red-500/30", "text-red-400", "bg-emerald-500/10", "border-emerald-500/30", "text-emerald-400");
+      if (type === "success") {
+        alertBox.classList.add("bg-emerald-500/10", "border-emerald-500/30", "text-emerald-400");
+      } else {
+        alertBox.classList.add("bg-red-500/10", "border-red-500/30", "text-red-400");
+      }
+      alertMessage.innerText = msg;
+    }
+
+    function showPanel(panel) {
+      alertBox.classList.add("hidden");
+      if (panel === "login") {
+        loginPanel.classList.remove("hidden");
+        registerPanel.classList.add("hidden");
+        tabLogin.className = "flex-1 pb-4 text-center font-semibold text-lg text-emerald-400 border-b-2 border-emerald-400 transition-all duration-200";
+        tabRegister.className = "flex-1 pb-4 text-center font-semibold text-lg text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition-all duration-200";
+      } else {
+        loginPanel.classList.add("hidden");
+        registerPanel.classList.remove("hidden");
+        tabRegister.className = "flex-1 pb-4 text-center font-semibold text-lg text-emerald-400 border-b-2 border-emerald-400 transition-all duration-200";
+        tabLogin.className = "flex-1 pb-4 text-center font-semibold text-lg text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition-all duration-200";
+      }
+    }
+
+    function validateEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      alertBox.classList.add("hidden");
+      
+      const email = document.getElementById("login-email").value;
+      const password = document.getElementById("login-password").value;
+
+      if (!validateEmail(email)) {
+        showAlert("Please enter a valid email address.");
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/account/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, portal: "servicenow" })
+        });
+        
+        const data = await response.json();
+        if (response.ok) {
+          showAlert("Login successful! Redirecting...", "success");
+          setTimeout(() => {
+            window.location.href = "/servicenow/dashboard";
+          }, 800);
+        } else {
+          showAlert(data.error || "Login failed");
+        }
+      } catch (err) {
+        showAlert("Server connection failed.");
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      alertBox.classList.add("hidden");
+
+      const email = document.getElementById("register-email").value;
+      const password = document.getElementById("register-password").value;
+      const confirm = document.getElementById("register-confirm").value;
+
+      if (!validateEmail(email)) {
+        showAlert("Please enter a valid email address.");
+        return;
+      }
+
+      if (password.length < 8) {
+        showAlert("Password must be at least 8 characters long.");
+        return;
+      }
+
+      if (password !== confirm) {
+        showAlert("Passwords do not match.");
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/account/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, portal: "servicenow" })
+        });
+        
+        const data = await response.json();
+        if (response.ok) {
+          showAlert("Registration successful! You can now sign in.", "success");
+          setTimeout(() => {
+            showPanel("login");
+          }, 1500);
+        } else {
+          showAlert(data.error || "Registration failed");
+        }
+      } catch (err) {
+        showAlert("Server connection failed.");
+      }
+    }
+  </script>
+</body>
+</html>

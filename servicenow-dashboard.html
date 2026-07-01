@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ServiceNow Dashboard - Attachments</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            snow: {
+              DEFAULT: '#2ea87e',
+              light: '#3dbb8e',
+              dark: '#218461',
+              50: '#f2faf7',
+              100: '#e1f3ec',
+              900: '#114130'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Outfit', sans-serif;
+    }
+    /* Custom thin scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col relative overflow-x-hidden">
+  <!-- Glow blob -->
+  <div class="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <!-- Header -->
+  <header class="w-full border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center font-bold text-emerald-400">
+          SN
+        </div>
+        <div>
+          <span class="font-bold text-white tracking-tight">ServiceNow Gateway</span>
+          <span id="user-email" class="block text-xs text-slate-400">Loading user...</span>
+        </div>
+      </div>
+      <nav class="flex flex-wrap items-center gap-6 text-sm font-medium">
+        <a href="/servicenow/dashboard" class="text-emerald-400 border-b-2 border-emerald-400 pb-1">Dashboard</a>
+        <a href="/servicenow/settings" class="text-slate-400 hover:text-white transition-colors pb-1">Settings</a>
+        <a href="/" class="text-slate-400 hover:text-white transition-colors pb-1">Gateway</a>
+        <button onclick="handleLogout()" class="text-slate-400 hover:text-rose-400 transition-colors pb-1">Sign Out</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Area -->
+  <main class="flex-grow max-w-7xl w-full mx-auto px-6 py-8 flex flex-col lg:flex-row gap-8">
+    
+    <!-- Left Column: Actions and Table -->
+    <div class="flex-1 space-y-8 min-w-0">
+      
+      <!-- Retrieve Card -->
+      <div class="bg-slate-900/60 border border-slate-800/80 backdrop-blur-md rounded-2xl p-6 shadow-xl">
+        <h2 class="text-lg font-semibold text-white mb-4 flex items-center">
+          <svg class="w-5 h-5 mr-2 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Retrieve Attachments
+        </h2>
+        <div class="flex flex-col sm:flex-row items-end gap-4">
+          <div class="flex-1 space-y-2 w-full">
+            <label for="older-than-days" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Older Than (Days)</label>
+            <input type="number" id="older-than-days" min="0" value="30" 
+              class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500/50 transition-colors">
+          </div>
+          <button id="btn-retrieve" onclick="triggerRetrieval()" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors duration-150 flex items-center justify-center space-x-2">
+            <span id="btn-retrieve-text">Run Retrieval</span>
+            <div id="btn-retrieve-spinner" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          </button>
+        </div>
+        <div id="retrieval-status" class="hidden mt-4 p-3 rounded-xl text-sm border flex items-center space-x-2"></div>
+      </div>
+
+      <!-- Controls & Filter Card -->
+      <div class="bg-slate-900/60 border border-slate-800/80 backdrop-blur-md rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex flex-col md:flex-row gap-4">
+          <!-- Search input -->
+          <div class="flex-1 relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </span>
+            <input type="text" id="search-input" oninput="filterAttachments()" placeholder="Search by Incident ID or file name..."
+              class="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-11 pr-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 transition-colors">
+          </div>
+          <!-- Type Filter dropdown -->
+          <div class="w-full md:w-48">
+            <select id="type-filter" onchange="filterAttachments()"
+              class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500/50 transition-colors">
+              <option value="all">All File Types</option>
+              <option value="PDF">PDF Documents</option>
+              <option value="IMG">Images</option>
+              <option value="XLS">Spreadsheets (XLS)</option>
+              <option value="DOC">Word Documents</option>
+              <option value="ZIP">ZIP Archives</option>
+              <option value="TXT">Text/Code Files</option>
+              <option value="FILE">Other Files</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attachments Table Card -->
+      <div class="bg-slate-900/60 border border-slate-800/80 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+          <div class="flex items-center space-x-4">
+            <h2 class="text-lg font-semibold text-white">Attachment Log</h2>
+            <!-- ponytail: bulk delete button -->
+            <button id="btn-delete-selected" onclick="deleteSelected()" class="hidden bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors flex items-center space-x-1.5">
+              <span>Delete Selected</span>
+              <span id="delete-selected-count" class="bg-rose-500/20 px-1.5 py-0.5 rounded text-[10px]">0</span>
+            </button>
+          </div>
+          <span id="log-count" class="text-xs font-semibold px-2.5 py-1 bg-slate-800 text-slate-300 rounded-full">0 Records</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm border-collapse">
+            <thead>
+              <tr class="border-b border-slate-800 bg-slate-950/50 text-slate-400 font-medium">
+                <th class="p-4 w-12 text-center">
+                  <input type="checkbox" id="select-all" onclick="toggleSelectAll(this)" class="rounded border-slate-800 bg-slate-950 text-emerald-500 focus:ring-emerald-500/50">
+                </th>
+                <th class="p-4">Incident ID</th>
+                <th class="p-4">Type</th>
+                <th class="p-4">Created On</th>
+                <th class="p-4">File Name</th>
+                <th class="p-4">Storage Key / Path</th>
+                <th class="p-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="attachments-body">
+              <tr>
+                <td colspan="6" class="p-8 text-center text-slate-500">Loading attachments...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: AI Panel -->
+    <div class="w-full lg:w-[400px] flex flex-col h-[650px] lg:sticky lg:top-24 bg-slate-900/60 border border-slate-800/80 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden">
+      <!-- Title -->
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
+        <div class="flex items-center space-x-2">
+          <div class="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse"></div>
+          <h3 class="font-bold text-white">Claude AI Assistant</h3>
+        </div>
+        <button onclick="clearChat()" class="text-xs text-slate-400 hover:text-white transition-colors">Clear Chat</button>
+      </div>
+
+      <!-- Messages body -->
+      <div id="chat-messages" class="flex-grow p-4 overflow-y-auto space-y-4 text-xs">
+        <div class="p-3.5 rounded-xl bg-slate-950/50 text-slate-400 leading-relaxed border border-slate-800/50">
+          Hi! I'm Claude. You can ask me questions about your ServiceNow incident attachment database. For example:
+          <ul class="list-disc pl-4 mt-2 space-y-1">
+            <li>"How many incidents are listed in the table?"</li>
+            <li>"Which incidents don't have attachments?"</li>
+            <li>"List all PDF files."</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Input footer -->
+      <div class="p-4 border-t border-slate-800 bg-slate-950/30">
+        <form onsubmit="sendChatMessage(event)" class="flex gap-2">
+          <input type="text" id="chat-input" placeholder="Ask Claude about attachments..." required
+            class="flex-grow bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-500/50 transition-colors">
+          <button type="submit" id="btn-chat-send" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-xl transition-colors duration-150 text-xs">
+            Send
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full py-6 border-t border-slate-900 text-center text-xs text-slate-500 mt-12">
+    &copy; 2026 Cloudeon. Protected by cryptography encryption modules.
+  </footer>
+
+  <script>
+    let allAttachments = [];
+    let filteredAttachments = [];
+    let chatHistory = [];
+
+    // Load initial user session and data
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const userRes = await fetch("/api/account/me?portal=servicenow");
+        if (userRes.ok) {
+          const user = await userRes.json();
+          document.getElementById("user-email").innerText = user.email;
+        } else {
+          window.location.href = "/servicenow";
+          return;
+        }
+      } catch (err) {
+        window.location.href = "/servicenow";
+        return;
+      }
+      
+      await loadAttachments();
+    });
+
+    async function loadAttachments() {
+      try {
+        const response = await fetch("/api/attachments?platform=servicenow");
+        if (response.ok) {
+          const data = await response.json();
+          allAttachments = data.attachments || [];
+          filterAttachments();
+        } else {
+          renderTableError("Failed to fetch attachments from server.");
+        }
+      } catch (e) {
+        renderTableError("Failed to communicate with server.");
+      }
+    }
+
+    function renderTableError(msg) {
+      document.getElementById("attachments-body").innerHTML = `
+        <tr>
+          <td colspan="6" class="p-8 text-center text-rose-400 font-medium">${msg}</td>
+        </tr>
+      `;
+    }
+
+    function getTypeBadge(fileName) {
+      if (!fileName) return { label: 'EMPTY', color: 'bg-slate-800/80 text-slate-500 border border-slate-800' };
+      const ext = fileName.split('.').pop().toLowerCase();
+      switch (ext) {
+        case 'pdf':
+          return { label: 'PDF', color: 'bg-rose-500/10 text-rose-400 border border-rose-500/20' };
+        case 'png':
+        case 'jpg':
+        case 'jpeg':
+        case 'gif':
+        case 'webp':
+          return { label: 'IMG', color: 'bg-blue-500/10 text-blue-400 border border-blue-500/20' };
+        case 'xls':
+        case 'xlsx':
+        case 'csv':
+          return { label: 'XLS', color: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' };
+        case 'doc':
+        case 'docx':
+          return { label: 'DOC', color: 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' };
+        case 'zip':
+        case 'tar':
+        case 'gz':
+        case 'rar':
+          return { label: 'ZIP', color: 'bg-amber-500/10 text-amber-400 border border-amber-500/20' };
+        case 'txt':
+        case 'json':
+        case 'xml':
+          return { label: 'TXT', color: 'bg-teal-500/10 text-teal-400 border border-teal-500/20' };
+        default:
+          return { label: 'FILE', color: 'bg-slate-500/10 text-slate-400 border border-slate-500/20' };
+      }
+    }
+
+    function filterAttachments() {
+      const search = document.getElementById("search-input").value.toLowerCase().trim();
+      const type = document.getElementById("type-filter").value;
+
+      filteredAttachments = allAttachments.filter(item => {
+        // Search filter
+        const matchSearch = 
+          (item.record_id && item.record_id.toLowerCase().includes(search)) || 
+          (item.file_name && item.file_name.toLowerCase().includes(search));
+        
+        if (!matchSearch) return false;
+
+        // Type filter
+        if (type === "all") return true;
+        const badgeInfo = getTypeBadge(item.file_name);
+        return badgeInfo.label === type;
+      });
+
+      renderTable();
+    }
+
+    // ponytail: Bulk selection & delete helpers
+    function toggleSelectAll(master) {
+      const checkboxes = document.querySelectorAll(".row-checkbox");
+      checkboxes.forEach(cb => {
+        cb.checked = master.checked;
+      });
+      updateDeleteSelectedButton();
+    }
+
+    function updateDeleteSelectedButton() {
+      const checkboxes = document.querySelectorAll(".row-checkbox:checked");
+      const btn = document.getElementById("btn-delete-selected");
+      const countSpan = document.getElementById("delete-selected-count");
+      
+      if (checkboxes.length > 0) {
+        btn.classList.remove("hidden");
+        countSpan.innerText = checkboxes.length;
+      } else {
+        btn.classList.add("hidden");
+      }
+    }
+
+    async function deleteSelected() {
+      const checked = document.querySelectorAll(".row-checkbox:checked");
+      if (checked.length === 0) return;
+      
+      if (!confirm(`Are you sure you want to remove the database records for the ${checked.length} selected attachments? This does NOT delete files on S3 or Local disk.`)) {
+        return;
+      }
+      
+      const btn = document.getElementById("btn-delete-selected");
+      btn.disabled = true;
+      btn.innerText = "Deleting...";
+      
+      const promises = Array.from(checked).map(cb => {
+        const sourceId = cb.getAttribute("data-source-id");
+        return fetch("/api/attachments/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ platform: "servicenow", source_id: sourceId })
+        });
+      });
+      
+      try {
+        await Promise.all(promises);
+      } catch (e) {
+        console.error("Bulk delete error", e);
+      }
+      
+      document.getElementById("select-all").checked = false;
+      await loadAttachments();
+      btn.disabled = false;
+      btn.innerHTML = `<span>Delete Selected</span><span id="delete-selected-count" class="bg-rose-500/20 px-1.5 py-0.5 rounded text-[10px]">0</span>`;
+      updateDeleteSelectedButton();
+    }
+
+    function renderTable() {
+      const body = document.getElementById("attachments-body");
+      document.getElementById("log-count").innerText = `${filteredAttachments.length} Records`;
+      document.getElementById("select-all").checked = false;
+      updateDeleteSelectedButton();
+
+      if (filteredAttachments.length === 0) {
+        body.innerHTML = `
+          <tr>
+            <td colspan="7" class="p-8 text-center text-slate-500 font-medium">No records found matching filters.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      body.innerHTML = filteredAttachments.map(item => {
+        const badge = getTypeBadge(item.file_name);
+        const hasAttachment = item.source_id !== null;
+        
+        let pathStr = "-";
+        if (item.storage_mode === "s3") {
+          pathStr = `<span class="text-amber-500 font-mono text-xs">S3 //</span> ${item.storage_key || ''}`;
+        } else if (item.storage_mode === "local") {
+          pathStr = `<span class="text-blue-400 font-mono text-xs">LOCAL //</span> ${item.storage_key || ''}`;
+        }
+
+        const dateStr = item.created_on ? item.created_on.substring(0, 16).replace('T', ' ') : '-';
+        
+        let downloadBtn = '';
+        if (hasAttachment && item.download_url) {
+          downloadBtn = `
+            <a href="${item.download_url}" target="_blank" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors" title="Download">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            </a>
+          `;
+        }
+
+        const deleteBtn = `
+          <button onclick="deleteAttachmentRecord('${item.source_id}', '${item.record_id}')" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors" title="Remove Record">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        `;
+
+        return `
+          <tr class="border-b border-slate-900 hover:bg-slate-900/25 transition-colors">
+            <td class="p-4 text-center">
+              <input type="checkbox" class="row-checkbox rounded border-slate-800 bg-slate-950 text-emerald-500 focus:ring-emerald-500/50" data-source-id="${item.source_id}" onchange="updateDeleteSelectedButton()">
+            </td>
+            <td class="p-4 font-semibold text-slate-200">${item.record_id}</td>
+            <td class="p-4">
+              <span class="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full ${badge.color}">
+                ${badge.label}
+              </span>
+            </td>
+            <td class="p-4 text-slate-400 text-xs">${dateStr}</td>
+            <td class="p-4 max-w-[200px] truncate text-slate-300 font-medium" title="${item.file_name || ''}">${item.file_name || '-'}</td>
+            <td class="p-4 max-w-[250px] truncate text-slate-400 text-xs" title="${item.storage_key || ''}">${pathStr}</td>
+            <td class="p-4 text-right">
+              <div class="inline-flex space-x-2">
+                ${downloadBtn}
+                ${deleteBtn}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function triggerRetrieval() {
+      const daysInput = document.getElementById("older-than-days");
+      const olderThanDays = parseInt(daysInput.value) || 0;
+      
+      const btn = document.getElementById("btn-retrieve");
+      const text = document.getElementById("btn-retrieve-text");
+      const spinner = document.getElementById("btn-retrieve-spinner");
+      const status = document.getElementById("retrieval-status");
+
+      btn.disabled = true;
+      text.innerText = "Retrieving...";
+      spinner.classList.remove("hidden");
+      
+      status.classList.remove("hidden", "bg-emerald-500/10", "border-emerald-500/30", "text-emerald-400", "bg-red-500/10", "border-red-500/30", "text-red-400");
+      status.classList.add("bg-slate-900/60", "border-slate-800", "text-slate-400");
+      status.innerHTML = `
+        <div class="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+        <span>Retrieving and archiving records. Please wait...</span>
+      `;
+
+      try {
+        const response = await fetch("/api/retrieve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ platform: "servicenow", older_than_days: olderThanDays })
+        });
+        
+        const data = await response.json();
+        
+        status.classList.remove("bg-slate-900/60", "border-slate-800", "text-slate-400");
+        if (data.ok) {
+          status.classList.add("bg-emerald-500/10", "border-emerald-500/30", "text-emerald-400");
+          status.innerText = data.message;
+          await loadAttachments();
+        } else {
+          status.classList.add("bg-red-500/10", "border-red-500/30", "text-red-400");
+          status.innerText = data.message || "Retrieval failed.";
+        }
+      } catch (err) {
+        status.classList.remove("bg-slate-900/60", "border-slate-800", "text-slate-400");
+        status.classList.add("bg-red-500/10", "border-red-500/30", "text-red-400");
+        status.innerText = "Server communication error.";
+      } finally {
+        btn.disabled = false;
+        text.innerText = "Run Retrieval";
+        spinner.classList.add("hidden");
+      }
+    }
+
+    async function deleteAttachmentRecord(sourceId, recordId) {
+      if (!confirm(`Are you sure you want to remove the database record for incident ${recordId}? This does NOT delete the file on S3 or Local disk.`)) {
+        return;
+      }
+      try {
+        const actualSourceId = sourceId === 'null' || sourceId === 'None' ? null : sourceId;
+        const response = await fetch("/api/attachments/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ platform: "servicenow", source_id: actualSourceId })
+        });
+        if (response.ok) {
+          await loadAttachments();
+        } else {
+          alert("Failed to delete record.");
+        }
+      } catch (e) {
+        alert("Failed to connect to server.");
+      }
+    }
+
+    async function sendChatMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById("chat-input");
+      const message = input.value.trim();
+      if (!message) return;
+
+      input.value = "";
+      appendMessage("user", message);
+
+      chatHistory.push({ role: "user", content: message });
+      
+      const btn = document.getElementById("btn-chat-send");
+      btn.disabled = true;
+      btn.innerText = "...";
+
+      // Context = current table data
+      const contextData = allAttachments.map(item => ({
+        record_id: item.record_id,
+        record_type: item.record_type,
+        created_on: item.created_on,
+        file_name: item.file_name,
+        content_type: item.content_type,
+        storage_mode: item.storage_mode,
+        storage_key: item.storage_key
+      }));
+
+      try {
+        const response = await fetch("/api/claude", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: chatHistory,
+            context: JSON.stringify(contextData),
+            platform: "servicenow"
+          })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          appendMessage("assistant", data.reply);
+          chatHistory.push({ role: "assistant", content: data.reply });
+        } else {
+          appendMessage("assistant", `Error: ${data.error || "Failed to query Claude"}`);
+        }
+      } catch (err) {
+        appendMessage("assistant", "Error: Failed to connect to server.");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Send";
+      }
+    }
+
+    function appendMessage(role, text) {
+      const messagesContainer = document.getElementById("chat-messages");
+      const msgDiv = document.createElement("div");
+      msgDiv.className = `p-3 rounded-xl max-w-[85%] leading-relaxed ${
+        role === "user" 
+          ? "bg-purple-600/20 text-purple-200 ml-auto border border-purple-500/20" 
+          : "bg-slate-950/60 text-slate-300 mr-auto border border-slate-800"
+      }`;
+      msgDiv.innerText = text;
+      messagesContainer.appendChild(msgDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function clearChat() {
+      document.getElementById("chat-messages").innerHTML = `
+        <div class="p-3.5 rounded-xl bg-slate-950/50 text-slate-400 leading-relaxed border border-slate-800/50">
+          Chat cleared. Ask me any question about the ServiceNow attachments table context.
+        </div>
+      `;
+      chatHistory = [];
+    }
+
+    async function handleLogout() {
+      try {
+        await fetch("/api/account/logout", { method: "POST" });
+      } catch (e) {}
+      window.location.href = "/servicenow";
+    }
+  </script>
+</body>
+</html>
