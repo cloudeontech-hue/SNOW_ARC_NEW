@@ -1,0 +1,58 @@
+2026-07-02 15:47:01,794 [INFO] ============================================================
+2026-07-02 15:47:01,794 [INFO] Testing connection for: https://dev391814.service-now.com
+2026-07-02 15:47:01,794 [INFO] Username: api_integration
+2026-07-02 15:47:01,794 [INFO] Target API Endpoint: https://dev391814.service-now.com/api/now/table/incident
+2026-07-02 15:47:01,795 [INFO] Sending GET request...
+2026-07-02 15:47:01,796 [DEBUG] Starting new HTTPS connection (1): dev391814.service-now.com:443
+2026-07-02 15:47:03,383 [DEBUG] https://dev391814.service-now.com:443 "GET /api/now/table/incident?sysparm_limit=1 HTTP/1.1" 401 None
+2026-07-02 15:47:03,384 [INFO] Response Status Code: 401
+2026-07-02 15:47:03,385 [INFO] Response Headers:
+2026-07-02 15:47:03,386 [INFO]   Server: snow_adc
+2026-07-02 15:47:03,386 [INFO]   Date: Thu, 02 Jul 2026 10:17:03 GMT
+2026-07-02 15:47:03,387 [INFO]   Content-Type: application/json;charset=UTF-8
+2026-07-02 15:47:03,387 [INFO]   Transfer-Encoding: chunked
+2026-07-02 15:47:03,388 [INFO]   Connection: keep-alive
+2026-07-02 15:47:03,388 [INFO]   Set-Cookie: JSESSIONID=3242BC2887F248359875DEE148F52B9B; Path=/; HttpOnly
+2026-07-02 15:47:03,388 [INFO]   Server-Timing: t;desc="655d1bca477d", sem_wait;dur=0, sesh_wait;dur=0
+2026-07-02 15:47:03,388 [INFO]   Content-Encoding: gzip
+2026-07-02 15:47:03,390 [INFO]   WWW-Authenticate: Basic realm="Service-now"
+2026-07-02 15:47:03,391 [INFO]   X-Content-Type-Options: nosniff
+2026-07-02 15:47:03,392 [INFO]   Pragma: no-store,no-cache
+2026-07-02 15:47:03,393 [INFO]   Cache-Control: no-cache,no-store,must-revalidate,max-age=-1
+2026-07-02 15:47:03,393 [INFO]   Expires: 0
+2026-07-02 15:47:03,393 [INFO]   Strict-Transport-Security: max-age=63072000; includeSubDomains
+2026-07-02 15:47:03,393 [INFO] Response Content-Type: application/json;charset=UTF-8
+2026-07-02 15:47:03,395 [INFO] Response Content Preview (first 1000 chars):
+2026-07-02 15:47:03,395 [INFO] ----------------------------------------
+2026-07-02 15:47:03,397 [INFO] {"error":{"message":"User is not authenticated","detail":"Required to provide Auth information"},"status":"failure"}
+2026-07-02 15:47:03,399 [INFO] ----------------------------------------
+2026-07-02 15:47:03,402 [ERROR] 401 Unauthorized. The credentials (username or password) are incorrect, or the user account is locked.
+2026-07-02 15:47:03,418 [INFO] ============================================================
+2026-07-02 15:47:03,419 [INFO] Testing ServiceNow SDK (PySNC) connection for: https://dev391814.service-now.com
+2026-07-02 15:47:03,420 [INFO] Username: api_integration
+2026-07-02 15:47:03,438 [INFO] Successfully imported pysnc module.
+2026-07-02 15:47:03,442 [INFO] Initializing ServiceNowClient...
+2026-07-02 15:47:03,442 [INFO] ServiceNowClient initialized.
+2026-07-02 15:47:03,448 [INFO] Attempting to query table: incident
+2026-07-02 15:47:03,448 [INFO] Executing query on GlideRecord...
+2026-07-02 15:47:03,453 [DEBUG] Starting new HTTPS connection (1): dev391814.service-now.com:443
+2026-07-02 15:47:04,917 [DEBUG] https://dev391814.service-now.com:443 "GET /api/now/table/incident?sysparm_query=ORDERBYsys_id&sysparm_display_value=all&sysparm_exclude_reference_link=true&sysparm_limit=1&sysparm_offset=0&sysparm_suppress_pagination_header=true HTTP/1.1" 401 None
+2026-07-02 15:47:04,918 [ERROR] SDK Request failed during GlideRecord query:
+Traceback (most recent call last):
+  File "h:\snow_arc_new\test_connection\test_sdk.py", line 57, in test_sdk_connection
+    gr.query()
+    ~~~~~~~~^^
+  File "C:\Users\cloud\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pysnc\record.py", line 563, in query
+    self._do_query(query)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\cloud\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pysnc\record.py", line 580, in _do_query
+    response = self._client.table_api.list(self)
+  File "C:\Users\cloud\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pysnc\client.py", line 216, in list
+    return self._send(req)
+           ~~~~~~~~~~^^^^^
+  File "C:\Users\cloud\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pysnc\client.py", line 199, in _send
+    self._validate_response(r)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\cloud\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pysnc\client.py", line 169, in _validate_response
+    raise AuthenticationException(rjson)
+pysnc.exceptions.AuthenticationException: {'error': {'message': 'User is not authenticated', 'detail': 'Required to provide Auth information'}, 'status': 'failure'}
