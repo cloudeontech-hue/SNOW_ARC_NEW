@@ -237,9 +237,11 @@
           allAttachments = data.attachments || [];
           filterAttachments();
         } else {
+          console.error("Failed to fetch attachments from server: Status", response.status);
           renderTableError("Failed to fetch attachments from server.");
         }
       } catch (e) {
+        console.error("Failed to communicate with server in loadAttachments:", e);
         renderTableError("Failed to communicate with server.");
       }
     }
@@ -322,7 +324,9 @@
       
       if (checkboxes.length > 0) {
         btn.classList.remove("hidden");
-        countSpan.innerText = checkboxes.length;
+        if (countSpan) {
+          countSpan.innerText = checkboxes.length;
+        }
       } else {
         btn.classList.add("hidden");
       }
@@ -332,7 +336,7 @@
       const checked = document.querySelectorAll(".row-checkbox:checked");
       if (checked.length === 0) return;
       
-      if (!confirm(`Are you sure you want to remove the database records for the ${checked.length} selected attachments? This does NOT delete files on S3 or Local disk.`)) {
+      if (!confirm(`Are you sure you want to delete the ${checked.length} selected attachments and their files from storage?`)) {
         return;
       }
       
@@ -342,15 +346,17 @@
       
       const promises = Array.from(checked).map(cb => {
         const sourceId = cb.getAttribute("data-source-id");
+        const actualSourceId = sourceId === 'null' || sourceId === 'None' ? null : sourceId;
         return fetch("/api/attachments/delete", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ platform: "servicenow", source_id: sourceId })
+          body: JSON.stringify({ platform: "servicenow", source_id: actualSourceId })
         });
       });
       
       try {
         await Promise.all(promises);
+        alert("Selected attachments and associated files successfully deleted.");
       } catch (e) {
         console.error("Bulk delete error", e);
       }
@@ -480,7 +486,7 @@
     }
 
     async function deleteAttachmentRecord(sourceId, recordId) {
-      if (!confirm(`Are you sure you want to remove the database record for incident ${recordId}? This does NOT delete the file on S3 or Local disk.`)) {
+      if (!confirm(`Are you sure you want to delete the attachment and file for incident ${recordId} from storage?`)) {
         return;
       }
       try {
@@ -491,6 +497,7 @@
           body: JSON.stringify({ platform: "servicenow", source_id: actualSourceId })
         });
         if (response.ok) {
+          alert("Attachment and associated file successfully deleted.");
           await loadAttachments();
         } else {
           alert("Failed to delete record.");

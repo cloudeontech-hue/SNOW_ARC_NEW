@@ -22,7 +22,7 @@ def run_retrieval(user_id: str, platform: str, older_than_days: int, credentials
         bucket = None
         if storage_mode == "s3":
             s3_client = get_s3_client(storage_credentials)
-            bucket = storage_credentials.get("bucket", "").strip() or os.environ.get("AWS_S3_BUCKET", "")
+            bucket = storage_credentials.get("bucket", "").strip()
             
         for record in source.iter_attachments(older_than_days, tmp_dir):
             total_count += 1

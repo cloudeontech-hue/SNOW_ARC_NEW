@@ -368,7 +368,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 try:
                     s3_config = storage_config.get("s3", {})
                     s3_client = get_s3_client(s3_config)
-                    bucket = s3_config.get("bucket", "").strip() or os.environ.get("AWS_S3_BUCKET", "")
+                    bucket = s3_config.get("bucket", "").strip()
                 except Exception as e:
                     print(f"Error instantiating S3 client for presigning: {e}")
             
@@ -765,10 +765,50 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 return
                 
             user_id = session["user_id"]
+            
+            # Retrieve attachment record to get storage info
+            attachment = get_attachment_by_source_id(user_id, platform, source_id) if source_id else None
+            if attachment:
+                storage_mode = attachment.get("storage_mode")
+                storage_key = attachment.get("storage_key")
+                
+                if storage_mode == "local" and storage_key:
+                    if os.path.exists(storage_key):
+                        try:
+                            os.remove(storage_key)
+                            # Clean up empty parent directories
+                            parent = os.path.dirname(storage_key)
+                            while parent:
+                                next_parent = os.path.dirname(parent)
+                                if next_parent == parent:
+                                    break
+                                if os.path.isdir(parent) and not os.listdir(parent):
+                                    try:
+                                        os.rmdir(parent)
+                                    except Exception:
+                                        break
+                                    parent = next_parent
+                                else:
+                                    break
+                        except Exception as e:
+                            print(f"Error removing local file or empty folders for {storage_key}: {e}")
+                elif storage_mode == "s3" and storage_key:
+                    try:
+                        creds = load_json("credentials.json")
+                        user_creds = creds.get(user_id, {})
+                        storage_config = user_creds.get("storage", {})
+                        s3_creds = storage_config.get("s3", {})
+                        bucket = s3_creds.get("bucket", "").strip()
+                        if bucket:
+                            s3_client = get_s3_client(s3_creds)
+                            s3_client.delete_object(Bucket=bucket, Key=storage_key)
+                    except Exception as e:
+                        print(f"Failed to delete S3 object {storage_key}: {e}")
+
             delete_attachment(user_id, platform, source_id)
             self.send_json({
                 "ok": True,
-                "message": "Attachment record removed from database."
+                "message": "Attachment record and associated file removed."
             })
             return
 

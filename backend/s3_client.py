@@ -5,10 +5,10 @@ from botocore.exceptions import ClientError
 from backend.crypto import decrypt_value
 
 def get_s3_client(credentials: dict):
-    # Retrieve AWS credentials with fallback to env variables
+    # Retrieve AWS credentials
     access_key = credentials.get("aws_access_key_id", "").strip()
     secret_key = credentials.get("aws_secret_access_key", "").strip()
-    region = credentials.get("region_name", "").strip() or os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
+    region = credentials.get("region_name", "").strip() or "us-east-1"
     
     if secret_key and not secret_key.startswith("********"):
         try:
@@ -23,9 +23,6 @@ def get_s3_client(credentials: dict):
     if access_key and secret_key:
         kwargs["aws_access_key_id"] = access_key
         kwargs["aws_secret_access_key"] = secret_key
-    elif os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get("AWS_SECRET_ACCESS_KEY"):
-        kwargs["aws_access_key_id"] = os.environ.get("AWS_ACCESS_KEY_ID")
-        kwargs["aws_secret_access_key"] = os.environ.get("AWS_SECRET_ACCESS_KEY")
         
     if region:
         kwargs["region_name"] = region
@@ -33,7 +30,7 @@ def get_s3_client(credentials: dict):
     return boto3.client("s3", **kwargs)
 
 def test_bucket_access(credentials: dict) -> tuple[bool, str]:
-    bucket = credentials.get("bucket", "").strip() or os.environ.get("AWS_S3_BUCKET", "")
+    bucket = credentials.get("bucket", "").strip()
     if not bucket:
         return False, "Bucket name is required"
     try:
