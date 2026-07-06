@@ -24,30 +24,30 @@
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between relative overflow-hidden">
+<body class="bg-[#f8fafc] text-slate-800 min-h-screen flex flex-col justify-between relative overflow-hidden">
   <!-- Glowing background blobs -->
-  <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none"></div>
-  <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-orange-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+  <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+  <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-orange-500/5 rounded-full blur-[120px] pointer-events-none"></div>
 
   <!-- Header -->
   <header class="w-full max-w-7xl mx-auto px-6 py-8 flex justify-between items-center z-10">
     <div class="flex items-center space-x-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-orange-500 flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-500/10">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-orange-500 flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-500/20">
         Ω
       </div>
-      <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 to-orange-400 bg-clip-text text-transparent">Cloudeon Archiver</span>
+      <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-emerald-600 to-orange-600 bg-clip-text text-transparent">Cloudeon Archiver</span>
     </div>
-    <div class="text-sm text-slate-400 font-medium">Self-hosted attachment gateway</div>
+    <div class="text-sm text-slate-500 font-medium">Self-hosted attachment gateway</div>
   </header>
 
   <!-- Main content -->
   <main class="flex-grow flex items-center justify-center px-6 py-12 z-10">
     <div class="w-full max-w-4xl text-center space-y-12">
       <div class="space-y-4">
-        <h1 class="text-4xl md:text-6xl font-bold tracking-tight text-white">
-          Helpdesk Attachment <span class="bg-gradient-to-r from-emerald-400 via-yellow-300 to-orange-400 bg-clip-text text-transparent">Archive Gateway</span>
+        <h1 class="text-4xl md:text-6xl font-bold tracking-tight text-slate-900">
+          Helpdesk Attachment <span class="bg-gradient-to-r from-emerald-600 via-amber-500 to-orange-600 bg-clip-text text-transparent">Archive Gateway</span>
         </h1>
-        <p class="text-lg text-slate-400 max-w-2xl mx-auto">
+        <p class="text-lg text-slate-600 max-w-2xl mx-auto">
           Securely archive and search attachments from ServiceNow and Freshdesk to local storage or AWS S3.
         </p>
       </div>
@@ -55,21 +55,21 @@
       <!-- Selection Cards Grid -->
       <div class="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
         <!-- ServiceNow card -->
-        <a href="/servicenow" class="group relative block p-8 rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md hover:border-emerald-500/40 hover:bg-slate-900/80 transition-all duration-300 hover:shadow-[0_0_30px_-5px_rgba(46,168,126,0.15)] overflow-hidden">
+        <a href="/servicenow" class="group relative block p-8 rounded-3xl bg-white border border-slate-200/80 hover:border-emerald-500/40 hover:bg-slate-50/30 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/5 overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-b from-emerald-500/0 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <div class="relative z-10 flex flex-col items-center text-center space-y-6">
-            <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 group-hover:scale-110 transition-transform duration-300">
+            <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-650 border border-emerald-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
             </div>
             <div class="space-y-2">
-              <h2 class="text-2xl font-semibold text-white group-hover:text-emerald-400 transition-colors">ServiceNow</h2>
-              <p class="text-sm text-slate-400">
+              <h2 class="text-2xl font-semibold text-slate-800 group-hover:text-emerald-600 transition-colors">ServiceNow</h2>
+              <p class="text-sm text-slate-500">
                 Retrieve incidents, resolve file metadata, stream files locally or archive to Amazon S3.
               </p>
             </div>
-            <div class="inline-flex items-center text-sm font-semibold text-emerald-400 group-hover:translate-x-1 transition-transform">
+            <div class="inline-flex items-center text-sm font-semibold text-emerald-600 group-hover:translate-x-1 transition-transform">
               Enter Portal
               <svg class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             </div>
@@ -77,21 +77,21 @@
         </a>
 
         <!-- Freshdesk card -->
-        <a href="/freshdesk" class="group relative block p-8 rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md hover:border-orange-500/40 hover:bg-slate-900/80 transition-all duration-300 hover:shadow-[0_0_30px_-5px_rgba(243,115,33,0.15)] overflow-hidden">
+        <a href="/freshdesk" class="group relative block p-8 rounded-3xl bg-white border border-slate-200/80 hover:border-orange-500/40 hover:bg-slate-50/30 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/5 overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-b from-orange-500/0 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <div class="relative z-10 flex flex-col items-center text-center space-y-6">
-            <div class="w-16 h-16 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-400 border border-orange-500/20 group-hover:scale-110 transition-transform duration-300">
+            <div class="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 border border-orange-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
               </svg>
             </div>
             <div class="space-y-2">
-              <h2 class="text-2xl font-semibold text-white group-hover:text-orange-400 transition-colors">Freshdesk</h2>
-              <p class="text-sm text-slate-400">
+              <h2 class="text-2xl font-semibold text-slate-800 group-hover:text-orange-600 transition-colors">Freshdesk</h2>
+              <p class="text-sm text-slate-500">
                 Retrieve support tickets, process file attachments, view storage status or query with AI.
               </p>
             </div>
-            <div class="inline-flex items-center text-sm font-semibold text-orange-400 group-hover:translate-x-1 transition-transform">
+            <div class="inline-flex items-center text-sm font-semibold text-orange-600 group-hover:translate-x-1 transition-transform">
               Enter Portal
               <svg class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             </div>
@@ -102,7 +102,7 @@
   </main>
 
   <!-- Footer -->
-  <footer class="w-full py-6 border-t border-slate-900 text-center text-xs text-slate-500 z-10">
+  <footer class="w-full py-6 border-t border-slate-200 text-center text-xs text-slate-400 z-10">
     &copy; 2026 Cloudeon. Protected by cryptography encryption modules.
   </footer>
 </body>
