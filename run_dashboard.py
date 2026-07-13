@@ -132,6 +132,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             content_type = "image/jpeg"
         elif filepath.endswith(".svg"):
             content_type = "image/svg+xml"
+        elif filepath.endswith(".ico"):
+            content_type = "image/x-icon"
             
         try:
             with open(filepath, 'rb') as f:
