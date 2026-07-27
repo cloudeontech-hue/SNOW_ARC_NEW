@@ -2,6 +2,8 @@
 
 Helpdesk attachment archiver for **ServiceNow** and **Freshdesk**. Connects to your helpdesk platform, retrieves ticket/incident attachments older than a configurable age, and archives them to either **Amazon S3** or a **local folder** — freeing up space in the source platform while keeping a searchable, browsable record.
 
+> Contributed by [rithwickbathini/snow_arc_new](https://github.com/rithwickbathini/snow_arc_new).
+
 ## Features
 
 - **Multi-platform**: ServiceNow (incidents) and Freshdesk (tickets), each with its own settings and dashboard UI.
