@@ -30,7 +30,7 @@
     }
   </style>
 </head>
-<<body class="bg-[#f4f5f6] text-slate-800 min-h-screen flex flex-col relative overflow-x-hidden">
+<body class="bg-[#f4f5f6] text-slate-800 min-h-screen flex flex-col relative overflow-x-hidden">
   <!-- Glow blob -->
   <div class="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none"></div>
 
@@ -137,7 +137,7 @@
             <div class="flex gap-2">
               <input type="text" id="local_path" placeholder="/absolute/path/to/archive"
                 class="flex-grow bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 transition-all">
-              <button type="button" onclick="openFolderBrowser()" class="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-semibold px-4 rounded-xl transition-all">
+              <button type="button" onclick="openFolderBrowser()" class="bg-slate-200 hover:bg-slate-300 border border-slate-300 text-slate-700 font-semibold px-4 py-2.5 rounded-xl transition-all">
                 Browse
               </button>
             </div>
@@ -206,7 +206,6 @@
           Folder Browser
         </h3>
         <button onclick="closeFolderBrowser()" class="text-slate-400 hover:text-slate-700 text-xl">&times;</button>
-      </div>">&times;</button>
       </div>
 
       <!-- Current path navigation -->
@@ -341,61 +340,29 @@
     async function togglePasswordVisibility(fieldId) {
       const input = document.getElementById(fieldId);
       if (input.type === "password") {
+        const needsReveal = input.value === "********" &&
+          ((fieldId === "password" && !hasFetchedPassword) ||
+           (fieldId === "aws_secret_access_key" && !hasFetchedS3Secret));
+
+        if (needsReveal) {
+          try {
+            const res = await fetch("/api/credentials/reveal?platform=servicenow");
+            if (!res.ok) throw new Error("reveal request failed");
+            const data = await res.json();
+            const secretValue = fieldId === "password" ? data.secrets?.password : data.secrets?.aws_secret_access_key;
+            if (!secretValue) throw new Error("no secret returned");
+
+            input.value = secretValue;
+            if (fieldId === "password") hasFetchedPassword = true;
+            if (fieldId === "aws_secret_access_key") hasFetchedS3Secret = true;
+          } catch (e) {
+            const alertFn = fieldId === "password" ? showConnectionAlert : showStorageAlert;
+            alertFn("Could not reveal the saved secret. Please try again.", "error");
+            return;
+          }
+        }
+
         input.type = "text";
-        
-        // Fetch real decrypted password on first reveal
-        if (fieldId === "password" && !hasFetchedPassword && input.value === "********") {
-          try {
-            const res = await fetch("/api/credentials/reveal?platform=servicenow");
-            if (res.ok) {
-              const data = await res.json();
-              input.value = data.secrets?.password || "";
-              hasFetchedPassword = true;
-            }
-          } catch (e) {}
-        }
-        
-        if (fieldId === "aws_secret_access_key" && !hasFetchedS3Secret && input.value === "********") {
-          try {
-            // S3 settings are retrieved inside storage settings, but secrets are decrypted on demand
-            // Wait, does /api/storage/reveal exist? The prompt states S3 config aws_secret_access_key is Fernet encrypted.
-            // Wait, does reveal retrieve storage secrets too? The prompt states GET /api/credentials/reveal?platform= returns decrypted secret.
-            // Let's implement storage secret decryption via GET /api/storage?portal= but actually it returns masked.
-            // Wait! The reveal endpoint for storage secrets?
-            // Let's check: "GET /api/credentials/reveal returns decrypted secret".
-            // Wait, is the S3 secret revealed through credentials/reveal too?
-            // Actually, we can check how to handle S3 secret.
-            // Since credentials/reveal is platform-based, it returns the platform secrets.
-            // Let's check how we handle S3 secret decryption.
-            // Wait! Can we get decrypted S3 secret using GET /api/credentials/reveal?platform=servicenow?
-            // Oh! In our run_dashboard.py `/api/credentials/reveal` returns secrets from PLATFORM_SECRET_FIELDS.
-            // Wait! Is S3 secret field also decrypted or can we add it to the credentials/reveal, or do we decrypt it directly?
-            // Actually, we can return storage decrypted secrets in the /api/credentials/reveal or we can expose a dedicated storage reveal.
-            // But wait, in run_dashboard.py:
-            // `/api/credentials/reveal` returns all secrets from platform and storage?
-            // Let's look at what we wrote in run_dashboard.py:
-            // It parses `platform` and gets decrypted platform secret fields. It doesn't reveal storage fields.
-            // Let's look at: " GET /api/credentials/reveal?platform=dev returns decrypted secret (powers show-password eye icon)"
-            // Wait! If the user wants to reveal `aws_secret_access_key`, we can expose S3 secret in credentials/reveal or have a general decrypt helper.
-            // Let's check: If they query `/api/credentials/reveal?platform=servicenow`, we can ALSO append the decrypted `aws_secret_access_key` from the user's storage config!
-            // Yes! That's super smart and keeps the endpoint mapping simple without adding new routes.
-            // Let's modify `/api/credentials/reveal` in run_dashboard.py to also include `aws_secret_access_key` if it exists.
-            // Wait, let's see. In run_dashboard.py, let's check if we can reveal S3 secret.
-            // Yes, let's make a request to `/api/credentials/reveal?platform=servicenow`. Let's assume it returns `{ secrets: { password: "...", aws_secret_access_key: "..." } }`.
-            // Let's check if that works.
-            const res = await fetch("/api/credentials/reveal?platform=servicenow");
-            if (res.ok) {
-              const data = await res.json();
-              if (fieldId === "aws_secret_access_key") {
-                input.value = data.secrets?.aws_secret_access_key || "";
-                hasFetchedS3Secret = true;
-              } else if (fieldId === "password") {
-                input.value = data.secrets?.password || "";
-                hasFetchedPassword = true;
-              }
-            }
-          } catch (e) {}
-        }
       } else {
         input.type = "password";
       }

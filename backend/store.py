@@ -2,7 +2,9 @@ import os
 import json
 import tempfile
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
+from backend.paths import get_data_dir
+
+DATA_DIR = str(get_data_dir())
 
 def ensure_data_dir():
     os.makedirs(DATA_DIR, exist_ok=True)
