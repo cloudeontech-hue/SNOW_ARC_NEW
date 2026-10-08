@@ -2,7 +2,9 @@ import os
 import sqlite3
 from datetime import datetime
 
-DB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
+from backend.paths import get_data_dir
+
+DB_DIR = str(get_data_dir())
 DB_PATH = os.path.join(DB_DIR, "attachments.db")
 
 def init_db():

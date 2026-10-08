@@ -1,16 +1,21 @@
 import os
 import json
+import time
+import secrets
 import urllib.parse
+import requests
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from http.cookies import SimpleCookie
 from datetime import datetime
 import dotenv
 
+from backend.paths import get_env_file_path
+
 # Load environment variables
-dotenv.load_dotenv()
+dotenv.load_dotenv(dotenv_path=get_env_file_path())
 
 # Import backend modules
-from backend.auth import get_session, login_user, logout_user, register_user
+from backend.auth import get_session, login_user, logout_user, register_user, request_email_verification, verify_existing_account, login_or_register_google_user
 from backend.store import load_json, save_json
 from backend.crypto import decrypt_value, encrypt_value
 from backend.db import init_db, get_attachments, get_attachment_by_source_id, delete_attachment
@@ -38,6 +43,19 @@ STATIC_ROUTES = {
     "/servicenow/settings": "servicenow-settings.html",
     "/freshdesk/settings": "freshdesk-settings.html"
 }
+
+# Google OAuth ("Sign in / Sign up with Google") config, read once at startup.
+# Set these in .env and register GOOGLE_REDIRECT_URI as an authorized redirect
+# URI on the Google Cloud OAuth client to enable the "Continue with Google"
+# buttons on the ServiceNow/Freshdesk login pages.
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI")
+GOOGLE_OAUTH_ENABLED = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET and GOOGLE_REDIRECT_URI)
+
+# In-memory CSRF state for the OAuth redirect round-trip: state -> {portal, expires_at}
+GOOGLE_OAUTH_STATES = {}
+GOOGLE_OAUTH_STATE_TTL_SECONDS = 600
 
 def get_session_from_cookie(headers, cookie_name: str):
     cookie_str = headers.get("Cookie", "")
@@ -132,6 +150,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             content_type = "image/jpeg"
         elif filepath.endswith(".svg"):
             content_type = "image/svg+xml"
+        elif filepath.endswith(".ico"):
+            content_type = "image/x-icon"
             
         try:
             with open(filepath, 'rb') as f:
@@ -190,6 +210,91 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     return
 
             self.serve_static(html_file)
+            return
+
+        # 1b. API: Start Google OAuth (login or signup)
+        if path == "/api/auth/google/start":
+            portal = self.get_query_param("portal")
+            if portal not in ("servicenow", "freshdesk"):
+                self.send_error_json(400, "Invalid portal specified")
+                return
+            if not GOOGLE_OAUTH_ENABLED:
+                self.redirect_to(f"/{portal}?google_error=config")
+                return
+
+            state = secrets.token_urlsafe(24)
+            GOOGLE_OAUTH_STATES[state] = {
+                "portal": portal,
+                "expires_at": time.time() + GOOGLE_OAUTH_STATE_TTL_SECONDS
+            }
+            params = {
+                "client_id": GOOGLE_CLIENT_ID,
+                "redirect_uri": GOOGLE_REDIRECT_URI,
+                "response_type": "code",
+                "scope": "openid email profile",
+                "state": state,
+                "access_type": "online",
+                "prompt": "select_account",
+            }
+            self.redirect_to("https://accounts.google.com/o/oauth2/v2/auth?" + urllib.parse.urlencode(params))
+            return
+
+        # 1c. API: Google OAuth callback
+        if path == "/api/auth/google/callback":
+            state = self.get_query_param("state")
+            code = self.get_query_param("code")
+            error = self.get_query_param("error")
+            state_entry = GOOGLE_OAUTH_STATES.pop(state, None)
+
+            if not state_entry or state_entry["expires_at"] < time.time():
+                self.redirect_to("/?google_error=1")
+                return
+            portal = state_entry["portal"]
+
+            if error or not code or not GOOGLE_OAUTH_ENABLED:
+                self.redirect_to(f"/{portal}?google_error=1")
+                return
+
+            try:
+                token_res = requests.post("https://oauth2.googleapis.com/token", data={
+                    "code": code,
+                    "client_id": GOOGLE_CLIENT_ID,
+                    "client_secret": GOOGLE_CLIENT_SECRET,
+                    "redirect_uri": GOOGLE_REDIRECT_URI,
+                    "grant_type": "authorization_code",
+                }, timeout=10)
+                token_data = token_res.json()
+                access_token = token_data.get("access_token")
+                if not access_token:
+                    self.redirect_to(f"/{portal}?google_error=1")
+                    return
+
+                userinfo_res = requests.get(
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    headers={"Authorization": f"Bearer {access_token}"},
+                    timeout=10
+                )
+                userinfo = userinfo_res.json()
+            except requests.RequestException:
+                self.redirect_to(f"/{portal}?google_error=1")
+                return
+
+            email = userinfo.get("email")
+            email_verified = userinfo.get("email_verified")
+            if not email or not email_verified:
+                self.redirect_to(f"/{portal}?google_error=unverified")
+                return
+
+            session_token, _ = login_or_register_google_user(email, portal)
+            if not session_token:
+                self.redirect_to(f"/{portal}?google_error=1")
+                return
+
+            cookie_name = f"cloudeon_{portal}_session"
+            self.send_response(302)
+            self.send_header("Set-Cookie", f"{cookie_name}={session_token}; Path=/; HttpOnly")
+            self.send_header("Location", f"/{portal}/dashboard")
+            self.end_headers()
             return
 
         # 2. API: Account me
@@ -465,16 +570,55 @@ class DashboardHandler(BaseHTTPRequestHandler):
             email = body.get("email")
             password = body.get("password")
             portal = body.get("portal")
-            
+            code = body.get("code")
+
             if not email or not password or not portal:
                 self.send_error_json(400, "email, password, and portal are required")
                 return
-                
-            success, msg = register_user(email, password, portal)
+            if not code:
+                self.send_error_json(400, "Verification code is required")
+                return
+
+            success, msg = register_user(email, password, portal, code)
             if success:
                 self.send_json({"message": msg}, status=201)
             else:
                 status = 409 if "already exists" in msg else 400
+                self.send_error_json(status, msg)
+            return
+
+        # 1b. API: Send Email Verification Code
+        elif path == "/api/account/send-verification":
+            email = body.get("email")
+            portal = body.get("portal")
+
+            if not email or not portal:
+                self.send_error_json(400, "email and portal are required")
+                return
+
+            success, msg = request_email_verification(email, portal)
+            if success:
+                self.send_json({"message": msg}, status=200)
+            else:
+                status = 409 if "already exists" in msg else 400
+                self.send_error_json(status, msg)
+            return
+
+        # 1c. API: Verify an existing (already-registered) but unverified account
+        elif path == "/api/account/verify":
+            email = body.get("email")
+            portal = body.get("portal")
+            code = body.get("code")
+
+            if not email or not portal or not code:
+                self.send_error_json(400, "email, portal, and code are required")
+                return
+
+            success, msg = verify_existing_account(email, portal, code)
+            if success:
+                self.send_json({"message": msg}, status=200)
+            else:
+                status = 404 if "No account found" in msg else 400
                 self.send_error_json(status, msg)
             return
 

@@ -1,0 +1,11 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <rect width="128" height="128" rx="24" fill="#1c1a17"/>
+  <defs>
+    <linearGradient id="spark" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f58a43"/>
+      <stop offset="1" stop-color="#cf5a11"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#spark)" d="M64 16 C67.5 40 73 54 94 64 C73 74 67.5 88 64 112 C60.5 88 55 74 34 64 C55 54 60.5 40 64 16 Z"/>
+  <path fill="url(#spark)" opacity="0.85" d="M97 26 C98.6 35 102.4 38.8 111.5 40.5 C102.4 42.2 98.6 46 97 55 C95.4 46 91.6 42.2 82.5 40.5 C91.6 38.8 95.4 35 97 26 Z"/>
+</svg>

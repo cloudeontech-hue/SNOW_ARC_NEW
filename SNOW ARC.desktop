@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=SNOW ARC
+Comment=ServiceNow/Freshdesk attachment archiver
+Exec=/mnt/shareable_folder/snow_arc_new/dist/SnowArc
+Icon=/mnt/shareable_folder/snow_arc_new/assets/cloudeon_logo.svg
+Terminal=false
+Categories=Utility;
